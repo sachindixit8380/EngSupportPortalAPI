@@ -3,6 +3,10 @@ package org.appnexus.engsupportAPI;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.appnexus.engsupportRESTClient.RESTClientService;
@@ -14,6 +18,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.ifountain.opsgenie.client.OpsGenieClient;
+import com.ifountain.opsgenie.client.OpsGenieClientException;
+import com.ifountain.opsgenie.client.model.alert.ListAlertsRequest;
+import com.ifountain.opsgenie.client.model.alert.ListAlertsResponse;
+import com.ifountain.opsgenie.client.model.alert.AlertsRequest.Status;
+import com.ifountain.opsgenie.client.model.beans.Alert;
+
 @Component
 public class RESTOperationImplementer {
 	
@@ -21,7 +34,9 @@ public class RESTOperationImplementer {
     private RESTClientService restClient;
     @Autowired
     private Environment env;
-    
+
+	JsonObject completeObject = new JsonObject();
+
 	HttpEntity<JSONText> getAllAlerts() 
 	{
 		JSONText response = new JSONText(restClient.callRestService(env.getProperty("niteowl.API.baseURL") + "/alerts/alert"));
@@ -53,5 +68,126 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
     	response.add(linkTo(methodOn(EngSupportAPIController.class).getAllAlerts()).withSelfRel());
 
         return new ResponseEntity<JSONText>(response, HttpStatus.OK);
+	}
+	
+	public JsonObject updateOpsGenieObjects() {//Refreshes the list of alerts
+		synchronized(completeObject) {
+            getOpenAlerts();
+            getClosedAlerts();
+            return completeObject;
+		}
+	}
+
+	private void getOpenAlerts() {
+    	String opsGenieApiKey = env.getProperty("opsgenie.appnexus.API.key");
+
+    	OpsGenieClient client = new OpsGenieClient();
+
+    	ListAlertsRequest request = new ListAlertsRequest();
+    	request.setApiKey(opsGenieApiKey);
+    	request.setLimit(5);
+    	request.withStatus(Status.open);
+    	List<String> listTags = new ArrayList<String>();
+    	listTags.add("ANES");
+    	request.setTags(listTags);
+    	ListAlertsResponse response = null;
+		try {
+			response = client.alert().listAlerts(request);
+		} catch (OpsGenieClientException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+    	List<Alert> alerts = response.getAlerts();
+
+    	
+    	JsonArray jsonArray = new JsonArray();
+
+    	for(Alert alert: alerts) {
+
+    		JsonObject jsonObject = new JsonObject();
+    		jsonObject.addProperty("owner", alert.getOwner());
+    		jsonObject.addProperty("message", alert.getMessage());
+
+    		JsonArray jsonArrayTags = new JsonArray();
+    		for(String tag:alert.getTags()) {
+    			jsonArrayTags.add(tag);
+    		}
+    		jsonObject.add("tags", jsonArrayTags);
+
+    		jsonObject.addProperty("alias", alert.getAlias());
+    		jsonObject.addProperty("description", alert.getDescription());
+    		jsonObject.addProperty("createdAt", alert.getCreatedAt());
+    		jsonObject.addProperty("updatedAt", alert.getUpdatedAt());
+    		jsonObject.addProperty("id", alert.getId());
+    		jsonObject.addProperty("tinyId", alert.getTinyId());
+
+    		JsonArray jsonArrayTeams = new JsonArray();
+    		for(String team:alert.getTeams()) {
+    			jsonArrayTeams.add(team);
+    		}
+    		jsonObject.add("teams", jsonArrayTeams);
+    		jsonArray.add(jsonObject);
+    	}
+
+    	completeObject.add("open_alerts", jsonArray);
+	}
+
+	private void getClosedAlerts() {
+    	String opsGenieApiKey = env.getProperty("opsgenie.appnexus.API.key");
+
+    	OpsGenieClient client = new OpsGenieClient();
+
+    	ListAlertsRequest request = new ListAlertsRequest();
+    	request.setApiKey(opsGenieApiKey);
+    	request.setLimit(5);
+    	request.withStatus(Status.closed);
+    	List<String> listTags = new ArrayList<String>();
+    	listTags.add("ANES");
+    	request.setTags(listTags);
+    	ListAlertsResponse response = null;
+		try {
+			response = client.alert().listAlerts(request);
+		} catch (OpsGenieClientException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+    	List<Alert> alerts = response.getAlerts();
+
+    	JsonArray jsonArray = new JsonArray();
+
+    	for(Alert alert: alerts) {
+
+    		JsonObject jsonObject = new JsonObject();
+    		jsonObject.addProperty("owner", alert.getOwner());
+    		jsonObject.addProperty("message", alert.getMessage());
+
+    		JsonArray jsonArrayTags = new JsonArray();
+    		for(String tag:alert.getTags()) {
+    			jsonArrayTags.add(tag);
+    		}
+    		jsonObject.add("tags", jsonArrayTags);
+
+    		jsonObject.addProperty("alias", alert.getAlias());
+    		jsonObject.addProperty("description", alert.getDescription());
+    		jsonObject.addProperty("createdAt", alert.getCreatedAt());
+    		jsonObject.addProperty("updatedAt", alert.getUpdatedAt());
+    		jsonObject.addProperty("id", alert.getId());
+    		jsonObject.addProperty("tinyId", alert.getTinyId());
+
+    		JsonArray jsonArrayTeams = new JsonArray();
+    		for(String team:alert.getTeams()) {
+    			jsonArrayTeams.add(team);
+    		}
+    		jsonObject.add("teams", jsonArrayTeams);
+    		jsonArray.add(jsonObject);
+    	}
+
+    	completeObject.add("closed_alerts", jsonArray);
 	}
 }

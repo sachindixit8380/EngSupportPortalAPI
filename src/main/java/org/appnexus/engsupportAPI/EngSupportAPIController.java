@@ -50,8 +50,8 @@ public class EngSupportAPIController {
     
     
     @RequestMapping(value="/getAllAlerts")
-    public HttpEntity<JSONText> getAllAlerts() {
-    	return restOprImpl.getAllAlerts();
+    public String getAllAlerts() {
+    	return restOprImpl.updateOpsGenieObjects().toString();
     }
     
     /**
