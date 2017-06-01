@@ -49,9 +49,9 @@ public class EngSupportAPIController {
     }
     
     
-    @RequestMapping(value="/getAllAlerts")
-    public String getAllAlerts() {
-    	return restOprImpl.updateOpsGenieObjects().toString();
+    @RequestMapping(value="/getTopAlerts")
+    public HttpEntity<JSONText> getAllAlerts() {
+    	return restOprImpl.getTopAlerts();
     }
     
     /**

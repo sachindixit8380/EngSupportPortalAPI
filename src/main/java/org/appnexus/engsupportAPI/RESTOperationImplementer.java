@@ -35,7 +35,7 @@ public class RESTOperationImplementer {
     @Autowired
     private Environment env;
 
-	JsonObject completeObject = new JsonObject();
+	JsonObject topAlerts = new JsonObject();
 
 	HttpEntity<JSONText> getAllAlerts() 
 	{
@@ -65,17 +65,18 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
 	HttpEntity<JSONText> getDownTimedAlerts() 
 	{
 		JSONText response = new JSONText(restClient.callRestService(env.getProperty("niteowl.API.baseURL") + "/alerts/filter"));
-    	response.add(linkTo(methodOn(EngSupportAPIController.class).getAllAlerts()).withSelfRel());
+    	response.add(linkTo(methodOn(EngSupportAPIController.class).getDownTimedAlerts()).withSelfRel());
 
         return new ResponseEntity<JSONText>(response, HttpStatus.OK);
 	}
 	
-	public JsonObject updateOpsGenieObjects() {//Refreshes the list of alerts
-		synchronized(completeObject) {
+	HttpEntity<JSONText> getTopAlerts() {
             getOpenAlerts();
             getClosedAlerts();
-            return completeObject;
-		}
+    		JSONText response = new JSONText(topAlerts.toString());
+        	response.add(linkTo(methodOn(EngSupportAPIController.class).getDownTimedAlerts()).withSelfRel());
+
+            return new ResponseEntity<JSONText>(response, HttpStatus.OK);
 	}
 
 	private void getOpenAlerts() {
@@ -132,7 +133,7 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
     		jsonArray.add(jsonObject);
     	}
 
-    	completeObject.add("open_alerts", jsonArray);
+    	topAlerts.add("open_alerts", jsonArray);
 	}
 
 	private void getClosedAlerts() {
@@ -188,6 +189,6 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
     		jsonArray.add(jsonObject);
     	}
 
-    	completeObject.add("closed_alerts", jsonArray);
+    	topAlerts.add("closed_alerts", jsonArray);
 	}
 }
