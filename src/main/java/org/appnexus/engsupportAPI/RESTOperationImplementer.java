@@ -119,7 +119,7 @@ public class RESTOperationImplementer {
 	}
 
 
-	String getAllDownTimedAlerts() 
+	 String getAllDownTimedAlerts() 
 	{
 		JSONText response = new JSONText(restClient.callRestService(env.getProperty("niteowl.API.baseURL") + "/alerts/filter"));
     	//response.add(linkTo(methodOn(EngSupportAPIController.class).getAllAlerts()).withSelfRel());
@@ -164,7 +164,8 @@ public class RESTOperationImplementer {
 
     	List<Alert> alerts = alertsOpen;
 		JsonArray jsonArray = new JsonArray();
-    	for(int i=0;i<2;i++)
+    	
+		for(int i=0;i<2;i++)
     	{	
 			jsonArray = new JsonArray();
 	    	for(Alert alert: alerts) {
@@ -193,11 +194,12 @@ public class RESTOperationImplementer {
 	    		jsonObject.add("teams", jsonArrayTeams);
 	    		jsonArray.add(jsonObject);
 	    	}
-	
-	    	completeObject.add("open_alerts", jsonArray);
+	    	if(!completeObject.has("open_alerts"))
+	    		completeObject.add("open_alerts", jsonArray.getAsJsonArray());
 	    	alerts = alertsClosed;
     	}
-    		completeObject.add("closed_alerts", jsonArray);
+    		if(!completeObject.has("closed_alerts"))
+    			completeObject.add("closed_alerts", jsonArray.getAsJsonArray());
 	}
 
 
