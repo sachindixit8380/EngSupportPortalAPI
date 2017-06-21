@@ -5,6 +5,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.text.ParseException;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +50,9 @@ public class EngSupportAPIController {
     }
     
     
-    @RequestMapping(value="/getTopAlerts")
-    public HttpEntity<JSONText> getAllAlerts() {
-    	return restOprImpl.getTopAlerts();
+    @RequestMapping(value="/getAllAlerts")
+    public String getAllAlerts() {
+    	return restOprImpl.updateOpsGenieObjects().toString();
     }
     
     /**
@@ -69,5 +70,9 @@ public class EngSupportAPIController {
     public HttpEntity<JSONText> getDownTimedAlerts() {
     	return restOprImpl.getDownTimedAlerts();
     }
-
+    @RequestMapping(value={"/getAllDownTimedAlerts"})
+    public HttpEntity<JSONText> getAllDownTimedAlerts() throws ParseException {
+    	   	return restOprImpl.getAllDownTimedAlerts();
+    }
+    
 }
