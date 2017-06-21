@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: hello.GreetingMockMvcTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.139 sec <<< FAILURE! - in hello.GreetingMockMvcTests
-envEndpointNotHidden(hello.GreetingMockMvcTests)  Time elapsed: 0.058 sec  <<< ERROR!
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 1.333 sec <<< FAILURE! - in hello.GreetingMockMvcTests
+envEndpointNotHidden(hello.GreetingMockMvcTests)  Time elapsed: 0.015 sec  <<< ERROR!
 org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'hello.GreetingMockMvcTests': Unsatisfied dependency expressed through field 'mockMvc'; nested exception is org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'org.springframework.test.web.servlet.MockMvc' available: expected at least 1 bean which qualifies as autowire candidate. Dependency annotations: {@org.springframework.beans.factory.annotation.Autowired(required=true)}
 	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor$AutowiredFieldElement.inject(AutowiredAnnotationBeanPostProcessor.java:588)
 	at org.springframework.beans.factory.annotation.InjectionMetadata.inject(InjectionMetadata.java:88)

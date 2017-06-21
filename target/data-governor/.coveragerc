@@ -1,0 +1,8 @@
+[run]
+omit = *governor_env/*
+
+[report]
+ignore_errors = True
+
+[xml]
+output = coverage_$BUILD_ID.xml

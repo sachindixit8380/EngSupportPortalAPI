@@ -1,0 +1,27 @@
+# Data Governor
+
+This is the data governor, it's responsible for data pipeline management.
+
+
+## Building locally
+
+To build locally you will need openldap-devel, python2.7-devel, openssl-devel.
+
+###OSX
+
+* Install homebrew
+ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+brew install python --framework
+brew install pip
+pip install virtualenv
+pip install virtualenvwrapper
+ln -s /u
+
+make install
+
+# To run unit tests 
+make test
+
+# To run data governor locally on your box
+# talk to someone on the DPaaS team :-)

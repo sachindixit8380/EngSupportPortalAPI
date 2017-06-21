@@ -1,13 +1,13 @@
 package org.appnexus.engsupportAPI;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
-
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.Optional;
 
+import javax.ws.rs.PathParam;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,14 +44,16 @@ public class EngSupportAPIController {
             @RequestParam(value = "name", required = false, defaultValue = "World") String name) {
 
     	JSONText response = new JSONText(String.format(TEMPLATE, name));
-    	response.add(linkTo(methodOn(EngSupportAPIController.class).greeting(name)).withSelfRel());
+    	//response.add(linkTo(methodOn(EngSupportAPIController.class).greeting(name)).withSelfRel());
         return new ResponseEntity<JSONText>(response, HttpStatus.OK);
     }
     
     
-    @RequestMapping(value="/getTopAlerts")
-    public HttpEntity<JSONText> getAllAlerts() {
-    	return restOprImpl.getTopAlerts();
+    @RequestMapping(value={"/getTopOpsGenieAlerts","/getTopOpsGenieAlerts/{alertCount}"})
+    public HttpEntity<String> getAllAlerts( @PathVariable(required=false) Integer alertCount) {
+    	if(alertCount == null)
+    		alertCount = 5;
+    	return restOprImpl.getTopOpsGenieAlerts(alertCount);
     }
     
     /**
@@ -60,14 +62,19 @@ public class EngSupportAPIController {
      * @param sortOrder = 0:Desc (Default), 1:Asc
      * @return
      */
-    @RequestMapping(value={"/getAlerts","/getAlerts/{alertStatus}/{alertCount}/{sortOrder}","/getAlerts/{alertStatus}/{alertCount}", "/getAlerts/{alertStatus}" })
-    public HttpEntity<JSONText> getAlerts(@PathVariable Optional<String> alertStatus, @PathVariable Optional<Integer> alertCount, @PathVariable Optional<Integer> sortOrder) {
-    	return restOprImpl.getAlerts(alertStatus, alertCount, sortOrder);
+    @RequestMapping(value={"/getAllEarlyBirdAlerts"})
+    public HttpEntity<String> getAllEarlyBirdAlerts() {
+    	return restOprImpl.getAllEarlyBirdAlerts();
     }
     
-    @RequestMapping(value={"/getDownTimedAlerts"})
-    public HttpEntity<JSONText> getDownTimedAlerts() {
-    	return restOprImpl.getDownTimedAlerts();
+    @RequestMapping(value={"/getAllDownTimedAlerts"})
+    public HttpEntity<String> getAllDownTimedAlerts() {
+    	return restOprImpl.getAllDownTimedAlertsAndScheduleDT();
+    }
+    
+    @RequestMapping(value={"/downTimeOrClearAlert/{action}/{serviceName}/{alertDS}/{alertHost}/{alertDT}/{alertUser}"})
+    public HttpEntity<String> downTimeOrClearAlert(@PathVariable String action, @PathVariable String serviceName, @PathVariable String alertDS, @PathVariable String alertHost, @PathVariable String alertDT, @PathVariable String alertUser) {
+    	return restOprImpl.downTimeOrClearAlert(action, serviceName, alertDS, alertHost, alertDT, alertUser);
     }
 
 }
