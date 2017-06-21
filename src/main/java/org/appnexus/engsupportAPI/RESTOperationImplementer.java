@@ -5,11 +5,23 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import org.appnexus.engsupportRESTClient.RESTClientService;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.impl.triggers.SimpleTriggerImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -35,7 +47,11 @@ public class RESTOperationImplementer {
     @Autowired
     private Environment env;
 
-	JsonObject topAlerts = new JsonObject();
+	JsonObject completeObject = new JsonObject();
+	
+	JSONParser parser = new JSONParser();
+    SchedulerFactory factory = new StdSchedulerFactory();
+    static Scheduler scheduler = null;
 
 	HttpEntity<JSONText> getAllAlerts() 
 	{
@@ -65,18 +81,17 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
 	HttpEntity<JSONText> getDownTimedAlerts() 
 	{
 		JSONText response = new JSONText(restClient.callRestService(env.getProperty("niteowl.API.baseURL") + "/alerts/filter"));
-    	response.add(linkTo(methodOn(EngSupportAPIController.class).getDownTimedAlerts()).withSelfRel());
+    	response.add(linkTo(methodOn(EngSupportAPIController.class).getAllAlerts()).withSelfRel());
 
         return new ResponseEntity<JSONText>(response, HttpStatus.OK);
 	}
 	
-	HttpEntity<JSONText> getTopAlerts() {
+	public JsonObject updateOpsGenieObjects() {//Refreshes the list of alerts
+		synchronized(completeObject) {
             getOpenAlerts();
             getClosedAlerts();
-    		JSONText response = new JSONText(topAlerts.toString());
-        	response.add(linkTo(methodOn(EngSupportAPIController.class).getDownTimedAlerts()).withSelfRel());
-
-            return new ResponseEntity<JSONText>(response, HttpStatus.OK);
+            return completeObject;
+		}
 	}
 
 	private void getOpenAlerts() {
@@ -133,7 +148,7 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
     		jsonArray.add(jsonObject);
     	}
 
-    	topAlerts.add("open_alerts", jsonArray);
+    	completeObject.add("open_alerts", jsonArray);
 	}
 
 	private void getClosedAlerts() {
@@ -189,6 +204,76 @@ HttpEntity<JSONText> getAlerts(@Value("Open") Optional<String> alertStatus, @Val
     		jsonArray.add(jsonObject);
     	}
 
-    	topAlerts.add("closed_alerts", jsonArray);
+    	completeObject.add("closed_alerts", jsonArray);
 	}
+	
+	 HttpEntity<JSONText> getAllDownTimedAlerts()  
+	    {
+	       
+		 TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+		 
+		 JSONText  response = getAlertsFilter();
+		 
+		   try {
+			   
+			   
+			   scheduler = factory.getScheduler();
+			   scheduler.start();
+	  
+	    	   String downtimed_alerts = response.getContent(); 
+	    	  
+	           Object obj = parser.parse(downtimed_alerts);
+               JSONObject jsonObject = (JSONObject) obj;
+			   JSONArray response_array = (JSONArray) jsonObject.get("response");
+		   
+		       for (int i = 0; i < response_array.size(); i++) {
+			   
+			   
+			   JSONObject row = (JSONObject) response_array.get(i);
+				 
+			   String id = String.valueOf(row.get("id"));
+			   String until = (String) (row.get("until"));
+			   String user =  (String) (row.get("user")); 
+			   			   
+			   
+			  
+			   JobDetail job = JobBuilder.newJob(NotifyEndofDowntime.class).withIdentity(id,"group1").build();
+			   job.getJobDataMap().put("id",id);
+			   job.getJobDataMap().put("user",user);
+			   job.getJobDataMap().put("until",until);
+			   job.getJobDataMap().put("callerInstance",this);
+			 
+			   SimpleDateFormat  formatter = new SimpleDateFormat("yyyy-M-dd HH:mm:ss");
+			   formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+			   Date d1 = formatter.parse(until);
+			   long timeMilli = d1.getTime();
+			  
+			   SimpleTriggerImpl simpleTrigger = new SimpleTriggerImpl();
+			   simpleTrigger.setName(id);
+			   simpleTrigger.setGroup("group1");
+			 
+			   simpleTrigger.setStartTime(new Date(timeMilli - 600000));
+			   
+			    scheduler.scheduleJob(job, simpleTrigger);
+			   
+			 
+			}
+			
+		} catch (Exception e) {
+			
+			e.printStackTrace();
+		}
+	     
+	        return new ResponseEntity<JSONText>(response, HttpStatus.OK);
+	    }
+	 
+	 
+	 JSONText getAlertsFilter()
+	{
+		 
+	 JSONText  response = new JSONText(restClient.callRestService(env.getProperty("niteowl.API.baseURL") + "/alerts/filter"));
+		 
+	 return response;
+	 }
+
 }
