@@ -128,7 +128,8 @@ public class RESTOperationImplementer {
 	}
 	
 	HttpEntity<String> getTopOpsGenieAlerts(int alertCount) {//Refreshes the list of alerts
-        getOpenClosedAlerts(alertCount);
+		completeObject.entrySet().clear();
+		getOpenClosedAlerts(alertCount);
         JSONText response = new JSONText(completeObject.toString());
         return new ResponseEntity<String>(response.getContent().toString(), HttpStatus.OK);
 	}
