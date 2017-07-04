@@ -57,9 +57,10 @@ public class RESTOperationImplementer {
     private String dbPass="july1980";
 
     private Connection conn = null;
-	JsonObject completeObject = new JsonObject();
-
-	JSONParser parser = new JSONParser();
+    
+    JsonObject completeObject = new JsonObject();
+    JSONParser parser = new JSONParser();
+	
     SchedulerFactory factory = new StdSchedulerFactory();
     static Scheduler scheduler = null;
     
@@ -67,6 +68,21 @@ public class RESTOperationImplementer {
     {
     }
 
+    private Connection getDBConnection()
+    {
+
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			// System.out.println("Connecting to database...");
+			conn = DriverManager.getConnection(dbURL + "?user=" + dbUser+ "&password=" + dbPass);
+			conn.setAutoCommit(true);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return conn;
+     }
+	
     private int insertOrClearDownTimedAlerts(String action, String serviceName, String alertDS, String alertHost, String alertDT, String alertUser)
     {
 		   PreparedStatement stmt = null;
@@ -75,16 +91,7 @@ public class RESTOperationImplementer {
 		   int k=0;
 		   if(conn==null)
 		   {
-			   try{
-				      Class.forName("com.mysql.jdbc.Driver");
-				      //System.out.println("Connecting to database...");
-				      conn = DriverManager.getConnection( dbURL + "?user=" + dbUser + "&password=" + dbPass);
-				      conn.setAutoCommit(true);
-				  }
-			   catch(Exception e) 
-			   {
-				   e.printStackTrace();
-			   }
+			 conn = getDBConnection();
 		   }
 		   try {
 			   if(action.equals("downtime"))
