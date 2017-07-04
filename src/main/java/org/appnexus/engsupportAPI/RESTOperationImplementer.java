@@ -212,6 +212,7 @@ public class RESTOperationImplementer {
 		 //to get the data from table too.
 		   try {
 			   scheduler = factory.getScheduler();
+			   scheduler.clear();
 			   scheduler.start();
 	  
 	    	   String downtimed_alerts = response.toString(); 
