@@ -209,7 +209,7 @@ public class RESTOperationImplementer {
 	    {
 		 TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 		 String response = getAllDownTimedAlerts();
-		 //to get the data from table too.
+		 
 		   try {
 			   scheduler = factory.getScheduler();
 			   scheduler.clear();
@@ -246,6 +246,41 @@ public class RESTOperationImplementer {
 				   simpleTrigger.setStartTime(new Date(timeMilli - 600000));
 				   scheduler.scheduleJob(job, simpleTrigger);
 			}
+			   if (conn == null) {
+				conn = getDBConnection();
+			}
+
+			         Statement stmt = conn.createStatement();
+			         ResultSet rs = stmt.executeQuery("select * from engsupportportal.DowntimedAlerts");
+			   
+			  while (rs.next()) {
+
+				String id = rs.getString("id");
+				String until = rs.getString("alert_downtime");
+				String user = rs.getString("alert_user");
+
+				JobDetail job = JobBuilder.newJob(NotifyEndofDowntime.class).withIdentity(id,"downtimeAlerts").build();
+
+				job.getJobDataMap().put("id", id);
+				job.getJobDataMap().put("user", user);
+				job.getJobDataMap().put("until", until);
+				job.getJobDataMap().put("callerInstance", this);
+
+				long timeMilli = Long.parseLong(until);
+				timeMilli = (timeMilli * 1000L) - 600000;
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-M-dd HH:mm:ss");
+				formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+				Date date = formatter.parse(String.valueOf(timeMilli));
+
+				SimpleTriggerImpl simpleTrigger = new SimpleTriggerImpl();
+				simpleTrigger.setName(id);
+				simpleTrigger.setGroup("downtimeAlerts");
+				simpleTrigger.setStartTime(date);
+
+				scheduler.scheduleJob(job, simpleTrigger);
+
+			}
+
 			
 		} catch (Exception e) {
 			
